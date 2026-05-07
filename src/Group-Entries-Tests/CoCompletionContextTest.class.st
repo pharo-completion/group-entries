@@ -20,12 +20,19 @@ CoCompletionContextTest >> setUp [
 
 { #category : 'testing' }
 CoCompletionContextTest >> testBuildGroupedEntriesFromWCheckBoundaries [
-	"hello's size is 5 so it has no prefix, helloW's size is 6"
+	"hello's size is 5 so it has no prefix, helloW's size is 6, Both will not be wrapped, since the 1st one's size is equal to the token's size, and the bucket only has one element "
+
 	completionContext completionToken: 'hello'.
 	items
-  add: (CoGlobalEntry new contents: 'hello'; yourself);
-	add: (CoGlobalEntry new contents: 'helloW'; yourself) .
-	self assert: (completionContext buildGroupedEntriesFrom: items ) size equals: 2
+		add: (CoGlobalEntry new
+				 contents: 'hello';
+				 yourself);
+		add: (CoGlobalEntry new
+				 contents: 'helloW';
+				 yourself).
+	self assert: (completionContext buildGroupedEntriesFrom: items) size equals: 2.
+	self assert: (completionContext buildGroupedEntriesFrom: items)first class equals: CoGlobalEntry.
+	self assert: (completionContext buildGroupedEntriesFrom: items)second class equals: CoGlobalEntry.
 ]
 
 { #category : 'testing' }
@@ -45,34 +52,53 @@ CoCompletionContextTest >> testBuildGroupedEntriesFromWhenEntriesShorterThanPref
 
 { #category : 'testing' }
 CoCompletionContextTest >> testBuildGroupedEntriesFromWithMixedComponents [
-	"Two entries sharing the same prefix, one single entry, and a short entry"
+	"Two entries sharing the same prefix, one single entry, and a short entry, the 2 first entries are wrapped in CoEntry"
+
 	completionContext completionToken: 'CoASTHeuristics'.
 	items
-  add: (CoGlobalEntry new contents: 'CoASTHeuristicsResultSetBuilder'; yourself);
-	add: (CoGlobalEntry new contents: 'CoASTHeuristicsFetcher'; yourself); 
-	add: (CoGlobalEntry new contents: 'CoEntry'; yourself); 
-	add: (CoGlobalEntry new contents: 'Co'; yourself) .
-	self assert: (completionContext buildGroupedEntriesFrom: items ) size equals: 3 
+		add: (CoGlobalEntry new
+				 contents: 'CoASTHeuristicsResultSetBuilder';
+				 yourself);
+		add: (CoGlobalEntry new
+				 contents: 'CoASTHeuristicsFetcher';
+				 yourself);
+		add: (CoGlobalEntry new
+				 contents: 'CoEntry';
+				 yourself);
+		add: (CoGlobalEntry new
+				 contents: 'Co';
+				 yourself).
+	self assert: (completionContext buildGroupedEntriesFrom: items) size equals: 3.
+	self assert: (completionContext buildGroupedEntriesFrom: items) third class  equals: CoEntry.
 ]
 
 { #category : 'testing' }
 CoCompletionContextTest >> testBuildGroupedEntriesFromWithMultipleLongEntries [
-  "With multiple entries sharing the same prefix, it should return a NECPrefixGroupEntry"
-  completionContext completionToken: 'CoASTHeuristics'.
-  items
-    add: (CoGlobalEntry new contents: 'CoASTHeuristicsResultSetBuilder'; yourself);
-    add: (CoGlobalEntry new contents: 'CoASTHeuristicsFetcher'; yourself).
-  self assert: (completionContext buildGroupedEntriesFrom: items) size equals: 1.
-  self assert: (completionContext buildGroupedEntriesFrom: items) first class equals: NECPrefixGroupEntry.
+	"With multiple entries sharing the same prefix, it should return a NECPrefixGroupEntry"
+
+	completionContext completionToken: 'CoASTHeuristics'.
+	items
+		add: (CoGlobalEntry new
+				 contents: 'CoASTHeuristicsResultSetBuilder';
+				 yourself);
+		add: (CoGlobalEntry new
+				 contents: 'CoASTHeuristicsFetcher';
+				 yourself).
+	self assert: (completionContext buildGroupedEntriesFrom: items) size equals: 1.
+	self assert: (completionContext buildGroupedEntriesFrom: items) first class equals: CoEntry
 ]
 
 { #category : 'testing' }
 CoCompletionContextTest >> testBuildGroupedEntriesFromWithSingleLongEntry [
-	"With One single entry, it shouldn't return a NECPrefixGroupEntry"
+	"With One single entry, it shouldn't return a CoENtry"
+
 	completionContext completionToken: 'CoASTHeuristics'.
-	items
-  add: (CoGlobalEntry new contents: 'CoASTHeuristicsResultSetBuilder'; yourself).
-	self assert: (completionContext buildGroupedEntriesFrom: items ) equals: items 
+	items add: (CoGlobalEntry new
+			 contents: 'CoASTHeuristicsResultSetBuilder';
+			 yourself).
+	self assert: (completionContext buildGroupedEntriesFrom: items) equals: items.
+	self deny: (completionContext buildGroupedEntriesFrom: items) first class equals: CoEntry 
+	
 ]
 
 { #category : 'testing' }
@@ -117,14 +143,15 @@ CoCompletionContextTest >> testLeaveGroupWhenGroupStackIsEmpty [
 
 { #category : 'testing' }
 CoCompletionContextTest >> testLeaveGroupWhenGroupStackIsNotEmpty [
+
 	| group |
-	group := NECPrefixGroupEntry new
-		children: { CoGlobalEntry new. CoSelectorEntry new }.
+	group := CoEntry new children: {
+			         CoGlobalEntry new.
+			         CoSelectorEntry new }.
 
 	completionContext openGroup: group.
 
-	self assert: (completionContext leaveGroup) equals: true.
-		
+	self assert: completionContext leaveGroup equals: true
 ]
 
 { #category : 'testing' }
@@ -135,12 +162,17 @@ CoCompletionContextTest >> testTitleWhenGroupStackIsEmpty [
 
 { #category : 'testing' }
 CoCompletionContextTest >> testTitleWhenGroupStackIsNotEmpty [
+
 	| group |
-	group := NECPrefixGroupEntry new
-		children: { CoGlobalEntry new contents: 'foo'; yourself. CoSelectorEntry new contents: 'bar'; yourself }.
+	group := CoEntry new children: {
+			         (CoGlobalEntry new
+				          contents: 'foo';
+				          yourself).
+			         (CoSelectorEntry new
+				          contents: 'bar';
+				          yourself) }.
 
 	completionContext openGroup: group.
 
-	self assert: (completionContext title) equals: ('Completions · ', 'foo')
-		
+	self assert: completionContext title equals: 'Completions · ' , 'foo'
 ]
